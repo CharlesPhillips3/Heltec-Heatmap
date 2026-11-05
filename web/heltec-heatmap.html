@@ -1,0 +1,1496 @@
+<title>Heltec Heatmap</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#101816">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500&family=Saira+Semi+Condensed:wght@600;700&display=swap">
+<style>
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+</style>
+<style>
+/* Layout: field-instrument panel beside a full-height survey map; stacks on phones with the record controls first. */
+:root{
+  --bg:#eaefed; --panel:#fbfcfc; --ink:#13201c; --muted:#56665f; --line:#d2dcd8; --well:#e2e9e6;
+  --accent:#0a7564; --accent-ink:#ffffff; --rec:#d93a2f;
+  --display:"Saira Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",-apple-system,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --q1:#1a9850; --q2:#74c365; --q3:#e9c923; --q4:#f28c38; --q5:#d93a2f; --q6:#7d3a8c; --unheard:#8a9893;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1412; --panel:#141e1b; --ink:#e3ebe8; --muted:#8c9e98; --line:#24322e; --well:#0f1815;
+  --accent:#3fcfb2; --accent-ink:#04211b; --rec:#ff5d50; --unheard:#5d6b67; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1412; --panel:#141e1b; --ink:#e3ebe8; --muted:#8c9e98; --line:#24322e; --well:#0f1815;
+  --accent:#3fcfb2; --accent-ink:#04211b; --rec:#ff5d50; --unheard:#5d6b67; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font:15px/1.45 var(--body)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{display:flex;align-items:center;gap:12px;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.brand{font:700 21px/1 var(--display);letter-spacing:.02em;display:flex;align-items:center;gap:9px}
+.brand svg{flex:none}
+.chip{margin-left:auto;font:500 12px var(--mono);padding:4px 9px;border-radius:99px;background:var(--well);color:var(--muted);white-space:nowrap}
+.chip.rec{background:var(--rec);color:#fff}
+
+.app{display:grid;grid-template-columns:1fr;gap:0}
+.panel{display:flex;flex-direction:column;gap:12px;padding-block:14px 28px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.mapwrap{position:relative;height:62svh;min-height:340px;border-block:1px solid var(--line)}
+#map{position:absolute;inset:0;background:var(--well)}
+@media (max-width:899px){
+  /* phone: Survey card first, then the map, then everything else */
+  .app{display:flex;flex-direction:column;gap:12px;padding-block:14px 28px}
+  .panelWrap,.panel{display:contents}
+  .app .card,.app .sample{order:3;margin-left:max(16px,env(safe-area-inset-left,0px));margin-right:max(16px,env(safe-area-inset-right,0px))}
+  .app .recordCard{order:1}
+  .mapwrap{order:2}
+}
+@media (min-width:900px){
+  .app{grid-template-columns:390px 1fr;height:calc(100svh - 56px)}
+  .panel{overflow-y:auto;border-right:1px solid var(--line);padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:18px}
+  .mapwrap{height:auto;order:2;border:0}
+  .panelWrap{order:1;min-height:0}
+}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.card h2{font:700 15px/1.2 var(--display);letter-spacing:.06em;text-transform:uppercase;margin:0 0 10px;color:var(--muted)}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+.hint b{color:var(--ink)}
+.sample{display:flex;align-items:center;gap:10px;justify-content:space-between;background:var(--well);border-radius:10px;padding:9px 12px;font-size:13px}
+.sample b{font-weight:700}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-weight:700;cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.stop{background:var(--rec);color:#fff;border-color:transparent}
+.btn.small{width:auto;padding:7px 11px;font-size:13px;border-radius:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1 1 140px}
+
+.steps{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:24px 1fr;gap:8px;font-size:14px;counter-increment:s}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--well);font:700 12px var(--mono);color:var(--muted)}
+.steps code{font:500 13px var(--mono);background:var(--well);padding:1px 5px;border-radius:5px}
+
+.meters{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
+.meters div{background:var(--well);border-radius:8px;padding:7px 6px;text-align:center;min-width:0}
+.meters b{display:block;font:500 16px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meters span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.msg{margin-top:10px;font-size:13px;padding:9px 11px;border-radius:8px;background:var(--well)}
+.msg.err{color:var(--rec)}
+
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--well);border-radius:10px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;padding:8px 4px;border-radius:8px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0/.12)}
+.field{display:grid;gap:5px;margin-top:12px}
+.field label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.field .val{font-family:var(--mono);color:var(--ink);text-transform:none;letter-spacing:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=search]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--well)}
+
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px;font-size:13px}
+.stats div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding-bottom:5px}
+.stats b{font:500 13px var(--mono);font-variant-numeric:tabular-nums}
+
+.nets{display:grid;margin-top:10px;max-height:420px;overflow-y:auto}
+.net{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;text-align:left;padding:9px 8px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;border-radius:6px}
+.net:hover{background:var(--well)}
+.net[aria-pressed="true"]{background:var(--well);box-shadow:inset 3px 0 0 var(--accent)}
+.net .n{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.net .n i{font-style:normal;color:var(--muted);font-weight:400}
+.net .d{grid-column:1;font-size:12px;color:var(--muted)}
+.net .r{grid-row:1/3;grid-column:2;font:500 13px var(--mono);display:flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
+.sw{width:10px;height:10px;border-radius:3px;display:inline-block;flex:none}
+.tag{font:500 10.5px var(--mono);padding:1px 5px;border-radius:4px;background:var(--well);color:var(--muted);margin-left:4px}
+.tag.open{background:var(--q5);color:#fff}
+
+.list{display:grid;gap:6px;margin-top:6px}
+.item{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:13px;padding:8px 10px;background:var(--well);border-radius:8px}
+.item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-weight:700;padding:2px 6px}
+.file{position:relative;overflow:hidden}
+.file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* map overlays */
+.mapbar{position:absolute;z-index:500;top:calc(10px + env(safe-area-inset-top,0px) * 0);right:max(10px,env(safe-area-inset-right,0px));display:flex;gap:6px}
+.mapbar .seg{background:var(--panel);box-shadow:0 1px 4px rgb(0 0 0/.2)}
+.mapbar .seg button{padding:6px 9px}
+.follow{position:absolute;z-index:500;right:max(10px,env(safe-area-inset-right,0px));top:54px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgb(0 0 0/.2)}
+.legend{position:absolute;z-index:500;left:max(10px,env(safe-area-inset-left,0px));bottom:22px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12px;max-width:calc(100% - 20px);box-shadow:0 1px 4px rgb(0 0 0/.2)}
+.legend .t{font:700 12px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.legend .bar{display:flex;gap:2px}
+.legend .bar div{flex:1;min-width:34px;text-align:center}
+.legend .bar i{display:block;height:9px;border-radius:2px;margin-bottom:3px}
+.legend .bar small{font:500 10px var(--mono);color:var(--muted)}
+.legend .note{margin-top:6px;color:var(--muted);font-size:11px}
+.leaflet-container{font:13px var(--body);background:var(--well)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--ink)}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4}
+.leaflet-popup-content b{font-family:var(--mono);font-weight:500}
+.pop-net{display:flex;justify-content:space-between;gap:12px;font-size:12px}
+.leaflet-control-attribution{background:color-mix(in srgb,var(--panel) 80%,transparent)!important;color:var(--muted)!important}
+.leaflet-control-attribution a{color:var(--muted)!important}
+.leaflet-bar a{background:var(--panel)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.ap-pin{background:var(--ink);color:var(--bg);font:700 11px var(--body);padding:3px 7px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 4px rgb(0 0 0/.35)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top">
+  <div class="brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9a14 14 0 0 1 20 0M5.5 12.5a9 9 0 0 1 13 0M9 16a4 4 0 0 1 6 0" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="19.5" r="1.8" fill="var(--accent)"/></svg>
+    Heltec Heatmap
+  </div>
+  <span class="chip" id="chip">Idle</span>
+</header>
+
+<div class="app">
+  <div class="mapwrap">
+    <div id="map" role="region" aria-label="Survey map"></div>
+    <div class="mapbar">
+      <div class="seg" id="baseSeg" role="group" aria-label="Map style">
+        <button data-b="street" aria-pressed="true">Street</button>
+        <button data-b="dark" aria-pressed="false">Dark</button>
+        <button data-b="sat" aria-pressed="false">Satellite</button>
+      </div>
+    </div>
+    <button class="follow" id="follow" hidden>Following you</button>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="panelWrap"><div class="panel">
+
+    <section class="card recordCard" aria-labelledby="h-rec">
+      <h2 id="h-rec">Survey</h2>
+      <ol class="steps">
+        <li><span>Power the Heltec, join its Wi‑Fi <code>Heltec-Heatmap-XXXX</code> (password <code>heatmap123</code>) and open <code>192.168.4.1</code>. Tap <b>Start</b>.</span></li>
+        <li><span>Come back here and tap <b>Record GPS</b>. Keep the screen on while you walk or drive.</span></li>
+        <li><span>On the board's page tap <b>Stop</b>, then <b>Download log</b>, and import it below.</span></li>
+      </ol>
+      <button class="btn primary" id="recBtn">Record GPS</button>
+      <div class="meters" aria-live="polite">
+        <div><b id="mFix">0</b><span>Fixes</span></div>
+        <div><b id="mAcc">–</b><span>Accuracy</span></div>
+        <div><b id="mDist">0 m</b><span>Distance</span></div>
+        <div><b id="mTime">0:00</b><span>Time</span></div>
+      </div>
+      <div class="msg" id="recMsg" hidden></div>
+      <div class="row" style="margin-top:10px">
+        <label class="btn file">Import log or track<input type="file" id="fileIn" accept=".txt,.json,.gpx,.csv,text/plain,application/json" multiple></label>
+      </div>
+      <p class="hint">Accepts the board's <b>heltec-heatmap-log.txt</b>, saved tracks from this app, or a GPX file from any GPS logger app.</p>
+    </section>
+
+    <div class="sample" id="sampleBar" hidden>
+      <span><b>Sample walk.</b> Made-up data so you can try the map.</span>
+      <button class="btn small" id="clearSample">Clear sample</button>
+    </div>
+
+    <section class="card" aria-labelledby="h-view">
+      <h2 id="h-view">Heat map</h2>
+      <div class="seg" id="modeSeg" role="group" aria-label="Color by">
+        <button data-m="best" aria-pressed="true">Best signal</button>
+        <button data-m="net" aria-pressed="false">One network</button>
+        <button data-m="count" aria-pressed="false">How many</button>
+        <button data-m="open" aria-pressed="false">Open</button>
+      </div>
+      <p class="hint" id="modeHint"></p>
+      <div class="field">
+        <label for="cellIn">Square size <span class="val" id="cellVal">15 m</span></label>
+        <input type="range" id="cellIn" min="5" max="60" step="5" value="15">
+      </div>
+      <div class="field" id="offsetField">
+        <label for="offIn">Time nudge <span class="val" id="offVal">0 s</span></label>
+        <input type="range" id="offIn" min="-120" max="120" step="1" value="0">
+      </div>
+      <p class="hint" id="offHint">Slide if the colors look shifted along your path. Synced logs usually need 0.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-stats">
+      <h2 id="h-stats">This survey</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-nets">
+      <h2 id="h-nets">Networks heard</h2>
+      <input type="search" id="q" placeholder="Search name or MAC" aria-label="Search networks">
+      <div class="nets" id="nets"></div>
+      <p class="hint">Tap a network to map just that one. Names with several access points (mesh systems) are grouped. The Heltec hears 2.4 GHz only.</p>
+    </section>
+
+    <section class="card" aria-labelledby="h-data">
+      <h2 id="h-data">Saved on this phone</h2>
+      <div class="list" id="dataList"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn small" id="saveTracks">Save GPS tracks</button>
+        <button class="btn small" id="saveCsv">Save merged CSV</button>
+        <button class="btn small" id="saveWigle">Save WiGLE CSV</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn small" id="wipe">Erase everything</button>
+        <button class="btn small stop" id="wipeYes" hidden>Tap again to erase</button>
+      </div>
+      <p class="hint">WiGLE CSV uploads straight to wigle.net if you share your surveys there.</p>
+    </section>
+
+  </div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---------------- state ----------------
+const S = {
+  tracks: [],          // [{id,name,pts:[[t,lat,lon,acc]]}]
+  logs: [],            // [{id,name,text}]
+  sample: false,
+  mode: 'best', cell: 15, offset: 0, sel: null, base: 'street', q: ''
+};
+let parsed = { nets: new Map(), sessions: [] };
+let samples = [];      // merged [{t,lat,lon,obs:[[id,rssi]]}]
+let unmatched = 0;
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('hh.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('hh.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+};
+
+// ---------------- log parsing ----------------
+function parseLog(text) {
+  const nets = new Map(), sessions = [];
+  let sec = '', cur = null;
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\r$/, '');
+    if (!line) continue;
+    if (line === '[nets]') { sec = 'n'; continue; }
+    if (line === '[scans]') { sec = 's'; continue; }
+    if (sec === 'n') {
+      const p = line.split(',');
+      if (p.length < 5) continue;
+      const id = +p[0];
+      nets.set(id, { id, bssid: p[1], ch: +p[2], auth: p[3], ssid: p.slice(4).join(',') });
+    } else if (sec === 's') {
+      if (line.startsWith('#S,')) {
+        const p = line.split(',');
+        cur = { synced: p[1] === '1', label: p.slice(3).join(',') || '', scans: [] };
+        sessions.push(cur);
+        continue;
+      }
+      if (!cur) { cur = { synced: false, label: '', scans: [] }; sessions.push(cur); }
+      const parts = line.split(';');
+      const t = +parts[0];
+      if (!isFinite(t)) continue;
+      const obs = [];
+      for (let i = 1; i < parts.length; i++) {
+        const k = parts[i].indexOf(':');
+        if (k > 0) obs.push([+parts[i].slice(0, k), +parts[i].slice(k + 1)]);
+      }
+      cur.scans.push({ t, obs });
+    }
+  }
+  return { nets, sessions: sessions.filter(s => s.scans.length) };
+}
+
+function combineLogs() {
+  // Each board log has its own network ids; re-key by BSSID so several logs combine.
+  const byMac = new Map(), nets = new Map(), sessions = [];
+  for (const L of S.logs) {
+    const p = parseLog(L.text);
+    const remap = new Map();
+    for (const n of p.nets.values()) {
+      let gid = byMac.get(n.bssid);
+      if (gid === undefined) { gid = nets.size; byMac.set(n.bssid, gid); nets.set(gid, { ...n, id: gid }); }
+      remap.set(n.id, gid);
+    }
+    for (const s of p.sessions) {
+      for (const sc of s.scans) sc.obs = sc.obs.filter(o => remap.has(o[0])).map(o => [remap.get(o[0]), o[1]]);
+      sessions.push(s);
+    }
+  }
+  parsed = { nets, sessions };
+}
+
+// ---------------- merge scans with GPS ----------------
+function allFixes() {
+  const pts = [];
+  for (const tr of S.tracks) for (const p of tr.pts) pts.push(p);
+  pts.sort((a, b) => a[0] - b[0]);
+  return pts;
+}
+
+function locate(pts, t) {
+  let lo = 0, hi = pts.length - 1;
+  if (hi < 0) return null;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (pts[m][0] < t) lo = m + 1; else hi = m; }
+  const b = pts[lo], a = lo > 0 ? pts[lo - 1] : null;
+  if (a && b[0] >= t && a[0] <= t && b[0] - a[0] <= 15000) {
+    const f = b[0] === a[0] ? 0 : (t - a[0]) / (b[0] - a[0]);
+    return [a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  }
+  let best = b;
+  if (a && Math.abs(a[0] - t) < Math.abs(b[0] - t)) best = a;
+  return Math.abs(best[0] - t) <= 5000 ? [best[1], best[2]] : null;
+}
+
+function merge() {
+  const pts = allFixes();
+  samples = []; unmatched = 0;
+  const off = S.offset * 1000;
+  const trackStarts = S.tracks.map(t => t.pts[0] && t.pts[0][0]).filter(Boolean).sort((a, b) => a - b);
+  let anyUnsynced = false;
+  for (const s of parsed.sessions) {
+    let shift = off;
+    if (!s.synced) {
+      anyUnsynced = true;
+      // Board had no clock: line its first scan up with the latest walk you recorded.
+      const anchor = trackStarts[trackStarts.length - 1] || 0;
+      shift = anchor - s.scans[0].t + off;
+    }
+    for (const sc of s.scans) {
+      const t = sc.t + shift;
+      const ll = locate(pts, t);
+      if (ll) samples.push({ t, lat: ll[0], lon: ll[1], obs: sc.obs });
+      else unmatched++;
+    }
+  }
+  $('offHint').textContent = anyUnsynced
+    ? 'This log was started without a clock sync, so it is lined up with the start of your latest walk. Slide until the colors sit right on your path.'
+    : 'Slide if the colors look shifted along your path. Synced logs usually need 0.';
+}
+
+// ---------------- colors ----------------
+const RSSI_STOPS = [
+  [-50, '--q1', '−50'], [-60, '--q2', '−60'], [-67, '--q3', '−67'],
+  [-75, '--q4', '−75'], [-85, '--q5', '−85'], [-200, '--q6', 'weaker']
+];
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function rssiColor(v) { for (const [t, c] of RSSI_STOPS) if (v >= t) return css(c); return css('--q6'); }
+const RAMP = ['#2b5c8a', '#3f8fb0', '#7cc4b0', '#e9c923', '#f28c38', '#d93a2f'];
+function rampColor(v, max) {
+  const f = max <= 1 ? 1 : (v - 1) / (max - 1);
+  return RAMP[Math.min(RAMP.length - 1, Math.floor(f * RAMP.length))];
+}
+
+// ---------------- map ----------------
+const map = L.map('map', { preferCanvas: true, zoomControl: true, attributionControl: true }).setView([42.2808, -83.743], 16);
+const BASES = {
+  street: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' }),
+  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20, subdomains: 'abcd', attribution: '© OpenStreetMap contributors © CARTO' }),
+  sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Imagery © Esri' })
+};
+let baseLayer = null;
+function setBase(b) {
+  S.base = b;
+  if (baseLayer) map.removeLayer(baseLayer);
+  baseLayer = BASES[b].addTo(map);
+  baseLayer.bringToBack();
+  for (const btn of $('baseSeg').children) btn.setAttribute('aria-pressed', btn.dataset.b === b);
+  store.set('base', b);
+}
+const cellLayer = L.layerGroup().addTo(map);
+const trackLayer = L.layerGroup().addTo(map);
+const liveLayer = L.layerGroup().addTo(map);
+
+function buildCells() {
+  cellLayer.clearLayers();
+  if (!samples.length) return { cells: 0 };
+  let lat0 = 0; for (const s of samples) lat0 += s.lat; lat0 /= samples.length;
+  const mLat = 111320, mLon = 111320 * Math.cos(lat0 * Math.PI / 180);
+  const dLat = S.cell / mLat, dLon = S.cell / mLon;
+  const sel = S.sel ? new Set(S.sel.ids) : null;
+  const cells = new Map();
+  for (const s of samples) {
+    const iy = Math.floor(s.lat / dLat), ix = Math.floor(s.lon / dLon);
+    const key = ix + ',' + iy;
+    let c = cells.get(key);
+    if (!c) { c = { ix, iy, n: 0, best: -999, heard: new Map(), selBest: -999 }; cells.set(key, c); }
+    c.n++;
+    for (const [id, r] of s.obs) {
+      if (r > c.best) c.best = r;
+      if ((c.heard.get(id) ?? -999) < r) c.heard.set(id, r);
+      if (sel && sel.has(id) && r > c.selBest) c.selBest = r;
+    }
+  }
+  let maxCount = 1;
+  for (const c of cells.values()) {
+    c.count = c.heard.size;
+    c.open = 0;
+    for (const id of c.heard.keys()) if (parsed.nets.get(id)?.auth === 'OPEN') c.open++;
+    maxCount = Math.max(maxCount, S.mode === 'open' ? c.open : c.count);
+  }
+  const unheard = css('--unheard');
+  for (const c of cells.values()) {
+    let color, op = 0.62, label;
+    if (S.mode === 'best') { if (c.best < -900) continue; color = rssiColor(c.best); label = `<b>${c.best} dBm</b> strongest`; }
+    else if (S.mode === 'net') {
+      if (!sel) continue;
+      if (c.selBest < -900) { color = unheard; op = 0.22; label = `Not heard here`; }
+      else { color = rssiColor(c.selBest); label = `<b>${c.selBest} dBm</b> ${esc(S.sel.name)}`; }
+    } else if (S.mode === 'count') { if (!c.count) continue; color = rampColor(c.count, maxCount); label = `<b>${c.count}</b> networks`; }
+    else { if (!c.open) { color = unheard; op = 0.18; label = 'No open networks'; } else { color = rampColor(c.open, maxCount); label = `<b>${c.open}</b> open networks`; } }
+    const b = [[c.iy * dLat, c.ix * dLon], [(c.iy + 1) * dLat, (c.ix + 1) * dLon]];
+    const rect = L.rectangle(b, { stroke: false, fillColor: color, fillOpacity: op, interactive: true });
+    rect.bindPopup(() => {
+      const top = [...c.heard.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+      return `${label}<br><span style="color:var(--muted)">${c.n} scan${c.n > 1 ? 's' : ''} in this ${S.cell} m square</span>` +
+        (top.length ? '<hr style="border:0;border-top:1px solid var(--line);margin:6px 0">' + top.map(([id, r]) => {
+          const n = parsed.nets.get(id); return `<div class="pop-net"><span>${esc(n?.ssid || '(hidden)')}</span><b>${r}</b></div>`;
+        }).join('') : '');
+    });
+    cellLayer.addLayer(rect);
+  }
+  if (S.mode === 'net' && sel) addApPin(sel);
+  return { cells: cells.size, maxCount };
+}
+
+function addApPin(sel) {
+  const hits = [];
+  for (const s of samples) for (const [id, r] of s.obs) if (sel.has(id)) hits.push([r, s.lat, s.lon]);
+  if (!hits.length) return;
+  hits.sort((a, b) => b[0] - a[0]);
+  const top = hits.slice(0, 12);
+  let w = 0, la = 0, lo = 0;
+  for (const [r, a, b] of top) { const k = Math.pow(10, r / 10); w += k; la += a * k; lo += b * k; }
+  const icon = L.divIcon({ className: '', html: `<div class="ap-pin">Router likely near here · ${top[0][0]} dBm</div>`, iconSize: null, iconAnchor: [10, 30] });
+  L.circleMarker([la / w, lo / w], { radius: 7, color: css('--ink'), weight: 2, fillColor: css('--panel'), fillOpacity: 1 }).addTo(cellLayer);
+  L.marker([la / w, lo / w], { icon, interactive: false }).addTo(cellLayer);
+}
+
+function drawTracks() {
+  trackLayer.clearLayers();
+  for (const tr of S.tracks) {
+    if (tr.pts.length < 2) continue;
+    L.polyline(tr.pts.map(p => [p[1], p[2]]), { color: css('--ink'), weight: 2, opacity: 0.45, dashArray: '2 5', interactive: false }).addTo(trackLayer);
+  }
+}
+
+function fitAll() {
+  const ll = samples.length ? samples.map(s => [s.lat, s.lon]) : allFixes().map(p => [p[1], p[2]]);
+  if (ll.length) map.fitBounds(L.latLngBounds(ll).pad(0.12), { maxZoom: 18 });
+}
+
+// ---------------- legend & hints ----------------
+const HINTS = {
+  best: 'Strongest signal from any network in each square. Green is great, yellow (−67 dBm) is the usual minimum for video calls.',
+  net: 'Pick a network in the list below. Grey squares are places you walked where it was not heard.',
+  count: 'How many different networks were heard in each square. Busy areas mean more channel crowding.',
+  open: 'Networks with no password. Grey squares had none.'
+};
+function legend(info) {
+  const el = $('legend');
+  if (S.mode === 'best' || S.mode === 'net') {
+    el.innerHTML = `<div class="t">${S.mode === 'net' && S.sel ? esc(S.sel.name) : 'Signal'} · dBm</div><div class="bar">` +
+      RSSI_STOPS.map(([, c, l]) => `<div><i style="background:var(${c})"></i><small>${l}</small></div>`).join('') +
+      `</div><div class="note">−67 voice/video grade · −75 browsing · −85 unreliable</div>`;
+  } else {
+    const max = info.maxCount || 1;
+    el.innerHTML = `<div class="t">${S.mode === 'open' ? 'Open networks' : 'Networks heard'} per square</div><div class="bar">` +
+      RAMP.map((c, i) => `<div><i style="background:${c}"></i><small>${i === 0 ? 1 : i === RAMP.length - 1 ? max : ''}</small></div>`).join('') + '</div>';
+  }
+  $('modeHint').textContent = HINTS[S.mode];
+}
+
+// ---------------- networks list ----------------
+function groups() {
+  // group by SSID (hidden networks stay separate by MAC)
+  const best = new Map(), count = new Map();
+  for (const s of samples) for (const [id, r] of s.obs) {
+    if ((best.get(id) ?? -999) < r) best.set(id, r);
+    count.set(id, (count.get(id) || 0) + 1);
+  }
+  const g = new Map();
+  for (const [id, n] of parsed.nets) {
+    if (!best.has(id)) continue;
+    const key = n.ssid ? 's:' + n.ssid : 'm:' + n.bssid;
+    let e = g.get(key);
+    if (!e) { e = { key, name: n.ssid || '(hidden)', hidden: !n.ssid, ids: [], macs: [], chs: new Set(), auth: n.auth, best: -999, heard: 0 }; g.set(key, e); }
+    e.ids.push(id); e.macs.push(n.bssid); e.chs.add(n.ch);
+    e.best = Math.max(e.best, best.get(id)); e.heard += count.get(id);
+  }
+  return [...g.values()].sort((a, b) => b.best - a.best);
+}
+
+function renderNets(list) {
+  const q = S.q.trim().toLowerCase();
+  const shown = list.filter(e => !q || e.name.toLowerCase().includes(q) || e.macs.some(m => m.toLowerCase().includes(q)));
+  $('nets').innerHTML = shown.length ? shown.slice(0, 300).map(e => {
+    const on = S.sel && S.sel.key === e.key;
+    const aps = e.ids.length > 1 ? `${e.ids.length} access points` : e.macs[0];
+    return `<button class="net" data-k="${esc(e.key)}" aria-pressed="${on}">
+      <span class="n">${e.hidden ? '<i>(hidden)</i>' : esc(e.name)}${e.auth === 'OPEN' ? '<span class="tag open">OPEN</span>' : `<span class="tag">${esc(e.auth)}</span>`}</span>
+      <span class="d">${esc(aps)} · ch ${[...e.chs].sort((a, b) => a - b).join(', ')} · heard ${e.heard}×</span>
+      <span class="r"><span class="sw" style="background:${rssiColor(e.best)}"></span>${e.best}</span></button>`;
+  }).join('') : `<p class="hint">${samples.length ? 'No match.' : 'Import a board log to see networks.'}</p>`;
+}
+
+// ---------------- stats & data list ----------------
+function dist(pts) {
+  let d = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const [, a, b] = pts[i - 1], [, c, e] = pts[i];
+    const R = 6371000, x = (e - b) * Math.PI / 180 * Math.cos((a + c) / 2 * Math.PI / 180), y = (c - a) * Math.PI / 180;
+    d += Math.sqrt(x * x + y * y) * R;
+  }
+  return d;
+}
+const fmtD = m => m >= 1000 ? (m / 1609.34).toFixed(2) + ' mi' : Math.round(m * 3.281) + ' ft';
+const fmtT = ms => { const s = Math.round(ms / 1000); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), ss = s % 60; return h ? `${h}:${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}` : `${m}:${String(ss).padStart(2, '0')}`; };
+
+function renderStats(info, list) {
+  const tot = parsed.sessions.reduce((a, s) => a + s.scans.length, 0);
+  let d = 0, ms = 0;
+  for (const t of S.tracks) { d += dist(t.pts); if (t.pts.length) ms += t.pts[t.pts.length - 1][0] - t.pts[0][0]; }
+  const open = list.filter(e => e.auth === 'OPEN').length;
+  const rows = [
+    ['Scans', tot], ['On the map', samples.length], ['Networks', list.length], ['Open', open],
+    ['Walked', fmtD(d)], ['Time', fmtT(ms)], ['Squares', info.cells || 0], ['No GPS match', unmatched]
+  ];
+  $('stats').innerHTML = rows.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+}
+
+function renderData() {
+  const items = [
+    ...S.logs.map(l => ({ kind: 'log', id: l.id, text: `Board log · ${l.name}` })),
+    ...S.tracks.map(t => ({ kind: 'track', id: t.id, text: `GPS · ${t.name} · ${t.pts.length} fixes` }))
+  ];
+  $('dataList').innerHTML = items.length ? items.map(i =>
+    `<div class="item"><span>${esc(i.text)}</span><button class="x" data-kind="${i.kind}" data-id="${esc(i.id)}" aria-label="Remove">✕</button></div>`).join('')
+    : '<p class="hint">Nothing yet. Record a walk and import the board log.</p>';
+}
+
+// ---------------- render all ----------------
+let lastList = [];
+function render(refit) {
+  combineLogs();
+  merge();
+  if (S.sel) { // keep selection valid
+    const ids = new Set(S.sel.ids);
+    if (![...parsed.nets.keys()].some(id => ids.has(id))) S.sel = null;
+  }
+  const info = buildCells();
+  drawTracks();
+  lastList = groups();
+  legend(info);
+  renderNets(lastList);
+  renderStats(info, lastList);
+  renderData();
+  $('sampleBar').hidden = !S.sample;
+  for (const b of $('modeSeg').children) b.setAttribute('aria-pressed', b.dataset.m === S.mode);
+  if (refit) fitAll();
+}
+
+function persist() {
+  if (S.sample) return;
+  const ok = store.set('tracks', S.tracks) && store.set('logs', S.logs);
+  if (!ok) note('Phone storage is full, so this survey will not be kept after you close the page. Use Save GPS tracks to keep it.', true);
+}
+
+function leaveSample() {
+  if (!S.sample) return;
+  S.sample = false; S.tracks = []; S.logs = []; S.sel = null;
+}
+
+// ---------------- recording ----------------
+let watchId = null, rec = null, wake = null, follow = true, timer = null;
+function note(t, err) { const m = $('recMsg'); m.hidden = !t; m.textContent = t || ''; m.classList.toggle('err', !!err); }
+
+async function keepAwake() {
+  try { if ('wakeLock' in navigator) wake = await navigator.wakeLock.request('screen'); } catch (e) { wake = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (rec && document.visibilityState === 'visible') keepAwake();
+  if (rec && document.visibilityState === 'hidden') note('The screen turned off or you left the page, so GPS paused. It picks up again when you come back.', true);
+});
+
+function startRec() {
+  if (!('geolocation' in navigator)) { note('This browser has no location access.', true); return; }
+  leaveSample();
+  const d = new Date();
+  rec = { id: 't' + d.getTime(), name: d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }), pts: [] };
+  S.tracks.push(rec);
+  render(false);
+  note('Waiting for the first GPS fix…');
+  liveLayer.clearLayers();
+  const line = L.polyline([], { color: css('--accent'), weight: 4, opacity: 0.9 }).addTo(liveLayer);
+  const dot = L.circleMarker([0, 0], { radius: 7, color: '#fff', weight: 2, fillColor: css('--accent'), fillOpacity: 1 });
+  let d0 = 0;
+  watchId = navigator.geolocation.watchPosition(p => {
+    const c = p.coords, pt = [p.timestamp || Date.now(), +c.latitude.toFixed(7), +c.longitude.toFixed(7), Math.round(c.accuracy)];
+    if (c.accuracy > 80) { $('mAcc').textContent = '±' + Math.round(c.accuracy) + 'm'; note('GPS is still settling. Step outside or wait a moment.'); return; }
+    note('');
+    if (rec.pts.length) d0 += dist([rec.pts[rec.pts.length - 1], pt]);
+    rec.pts.push(pt);
+    line.addLatLng([pt[1], pt[2]]);
+    dot.setLatLng([pt[1], pt[2]]); if (!liveLayer.hasLayer(dot)) dot.addTo(liveLayer);
+    if (follow) map.setView([pt[1], pt[2]], Math.max(map.getZoom(), 17), { animate: false });
+    $('mFix').textContent = rec.pts.length;
+    $('mAcc').textContent = '±' + Math.round(c.accuracy) + 'm';
+    $('mDist').textContent = fmtD(d0);
+    if (rec.pts.length % 15 === 0) persist();
+  }, err => {
+    const inPreview = !!window.claude;
+    const msg = err.code === 1 && inPreview
+      ? 'GPS is blocked inside the Claude preview. To record a walk, open the GitHub Pages copy of Heltec Heatmap on your iPhone (see the README). You can still import logs and tracks here.'
+      : err.code === 1
+      ? 'Location is blocked. On iPhone: Settings › Privacy & Security › Location Services › Safari Websites › While Using. Then reload. (Location only works when this page is opened from its https web address.)'
+      : err.code === 3 ? 'GPS is taking a while. Keep going; fixes will show up when it locks.' : 'GPS is not available right now.';
+    note(msg, err.code === 1);
+    if (err.code === 1) stopRec();
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
+  keepAwake();
+  const t0 = Date.now();
+  timer = setInterval(() => { $('mTime').textContent = fmtT(Date.now() - t0); }, 1000);
+  $('recBtn').textContent = 'Stop recording'; $('recBtn').className = 'btn stop';
+  $('chip').textContent = '● Recording'; $('chip').classList.add('rec');
+  $('follow').hidden = false; follow = true; $('follow').textContent = 'Following you';
+}
+
+function stopRec() {
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+  watchId = null; clearInterval(timer);
+  try { wake && wake.release(); } catch (e) {}
+  wake = null;
+  if (rec && rec.pts.length < 2) S.tracks = S.tracks.filter(t => t !== rec);
+  else if (rec) note(`Saved ${rec.pts.length} GPS fixes. Now download the log from the board and import it.`);
+  rec = null;
+  liveLayer.clearLayers();
+  persist();
+  $('recBtn').textContent = 'Record GPS'; $('recBtn').className = 'btn primary';
+  $('chip').textContent = 'Idle'; $('chip').classList.remove('rec');
+  $('follow').hidden = true;
+  render(true);
+}
+
+$('recBtn').onclick = () => (rec ? stopRec() : startRec());
+$('follow').onclick = () => { follow = !follow; $('follow').textContent = follow ? 'Following you' : 'Follow me'; };
+map.on('dragstart', () => { if (rec) { follow = false; $('follow').textContent = 'Follow me'; } });
+
+// ---------------- import ----------------
+function parseGpx(text, name) {
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  const pts = [];
+  for (const p of doc.querySelectorAll('trkpt,rtept,wpt')) {
+    const t = Date.parse(p.querySelector('time')?.textContent || '');
+    if (!isFinite(t)) continue;
+    pts.push([t, +p.getAttribute('lat'), +p.getAttribute('lon'), 10]);
+  }
+  pts.sort((a, b) => a[0] - b[0]);
+  return pts.length ? { id: 'g' + Date.now() + Math.random().toString(36).slice(2, 6), name: name.replace(/\.gpx$/i, ''), pts } : null;
+}
+
+$('fileIn').onchange = async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  let added = [];
+  for (const f of files) {
+    const text = await f.text();
+    try {
+      if (text.startsWith('HELTECHEATMAP')) {
+        leaveSample();
+        if (!parseLog(text).sessions.length) { added.push(`${f.name}: no scans in it`); continue; }
+        S.logs.push({ id: 'l' + Date.now() + Math.random().toString(36).slice(2, 6), name: f.name + ' · ' + new Date().toLocaleDateString(), text });
+        added.push(`board log ${f.name}`);
+      } else if (/<gpx[\s>]/i.test(text)) {
+        const tr = parseGpx(text, f.name);
+        if (tr) { leaveSample(); S.tracks.push(tr); added.push(`GPS track ${f.name}`); } else added.push(`${f.name}: no timed points`);
+      } else if (text.trim().startsWith('{')) {
+        const j = JSON.parse(text);
+        if (Array.isArray(j.tracks)) { leaveSample(); for (const t of j.tracks) if (!S.tracks.some(x => x.id === t.id)) S.tracks.push(t); added.push(`${j.tracks.length} saved track(s)`); }
+      } else added.push(`${f.name}: not a file this app knows`);
+    } catch (err) { added.push(`${f.name}: could not read it`); }
+  }
+  persist();
+  note(added.length ? 'Imported ' + added.join(', ') + '.' : '');
+  render(true);
+};
+
+// ---------------- exports ----------------
+// Inside the Claude artifact viewer, files go through its save prompt; on GitHub Pages, a normal download.
+let dlCap;
+const dlReady = (window.claude && typeof window.claude.use === 'function')
+  ? window.claude.use('downloads').then(d => { dlCap = d; }, () => { dlCap = null; })
+  : Promise.resolve(dlCap = null);
+async function download(name, text, type) {
+  if (!samples.length && !S.tracks.length) { note('Nothing to save yet.'); return; }
+  await dlReady;
+  if (dlCap) {
+    try { await dlCap.save({ filename: name, data: text }); note('Saved ' + name + '.'); }
+    catch (e) { if (e && e.code !== 'declined') note('Could not save the file here (' + (e.code || 'error') + ').', true); }
+    return;
+  }
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+}
+const stamp = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+$('saveTracks').onclick = () => download(`heltec-heatmap-tracks-${stamp()}.json`, JSON.stringify({ app: 'Heltec Heatmap', tracks: S.tracks }), 'application/json');
+$('saveCsv').onclick = () => {
+  const rows = ['time_iso,lat,lon,bssid,ssid,channel,auth,rssi'];
+  for (const s of samples) for (const [id, r] of s.obs) {
+    const n = parsed.nets.get(id); if (!n) continue;
+    rows.push([new Date(s.t).toISOString(), s.lat.toFixed(6), s.lon.toFixed(6), n.bssid, '"' + n.ssid.replace(/"/g, '""') + '"', n.ch, n.auth, r].join(','));
+  }
+  download(`heltec-heatmap-${stamp()}.csv`, rows.join('\n'), 'text/csv');
+};
+$('saveWigle').onclick = () => {
+  const AUTH = { OPEN: '[ESS]', WEP: '[WEP][ESS]', WPA: '[WPA-PSK-TKIP][ESS]', WPA2: '[WPA2-PSK-CCMP][ESS]', 'WPA2-E': '[WPA2-EAP-CCMP][ESS]', WPA3: '[WPA3-SAE-CCMP][ESS]' };
+  const pad = n => String(n).padStart(2, '0');
+  const fmt = t => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+  const rows = ['WigleWifi-1.4,appRelease=1.0,model=WiFi LoRa 32,release=1.0,device=Heltec Heatmap,display=SSD1306,board=ESP32-S3,brand=Heltec',
+    'MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type'];
+  for (const s of samples) for (const [id, r] of s.obs) {
+    const n = parsed.nets.get(id); if (!n) continue;
+    rows.push([n.bssid, '"' + n.ssid.replace(/"/g, '""') + '"', AUTH[n.auth] || '[ESS]', fmt(s.t), n.ch, r, s.lat.toFixed(6), s.lon.toFixed(6), 0, 10, 'WIFI'].join(','));
+  }
+  download(`heltec-heatmap-wigle-${stamp()}.csv`, rows.join('\n'), 'text/csv');
+};
+
+// ---------------- controls ----------------
+$('modeSeg').onclick = e => { const m = e.target.dataset?.m; if (!m) return; S.mode = m; if (m === 'net' && !S.sel && lastList[0]) S.sel = { key: lastList[0].key, ids: lastList[0].ids, name: lastList[0].name }; render(false); };
+$('baseSeg').onclick = e => { const b = e.target.dataset?.b; if (b) setBase(b); };
+$('cellIn').oninput = e => { S.cell = +e.target.value; $('cellVal').textContent = S.cell + ' m'; render(false); };
+$('offIn').oninput = e => { S.offset = +e.target.value; $('offVal').textContent = (S.offset > 0 ? '+' : '') + S.offset + ' s'; render(false); };
+$('q').oninput = e => { S.q = e.target.value; renderNets(lastList); };
+$('nets').onclick = e => {
+  const b = e.target.closest('.net'); if (!b) return;
+  const g = lastList.find(x => x.key === b.dataset.k); if (!g) return;
+  if (S.sel && S.sel.key === g.key && S.mode === 'net') { S.sel = null; S.mode = 'best'; }
+  else { S.sel = { key: g.key, ids: g.ids, name: g.name }; S.mode = 'net'; }
+  render(false);
+  if (S.mode === 'net') {
+    const ids = new Set(g.ids), ll = [];
+    for (const s of samples) if (s.obs.some(o => ids.has(o[0]))) ll.push([s.lat, s.lon]);
+    if (ll.length) map.fitBounds(L.latLngBounds(ll).pad(0.15), { maxZoom: 18 });
+    if (window.innerWidth < 900) document.querySelector('.mapwrap').scrollIntoView({ behavior: 'smooth' });
+  }
+};
+$('dataList').onclick = e => {
+  const b = e.target.closest('.x'); if (!b) return;
+  if (b.dataset.kind === 'log') S.logs = S.logs.filter(l => l.id !== b.dataset.id);
+  else S.tracks = S.tracks.filter(t => t.id !== b.dataset.id);
+  persist(); render(false);
+};
+$('clearSample').onclick = () => { leaveSample(); render(false); };
+$('wipe').onclick = () => { $('wipe').hidden = true; $('wipeYes').hidden = false; setTimeout(() => { $('wipe').hidden = false; $('wipeYes').hidden = true; }, 4000); };
+$('wipeYes').onclick = () => { S.tracks = []; S.logs = []; S.sel = null; S.sample = false; store.set('tracks', []); store.set('logs', []); $('wipe').hidden = false; $('wipeYes').hidden = true; render(false); };
+
+// ---------------- sample walk ----------------
+function makeSample() {
+  const lat0 = 42.2808, lon0 = -83.7430, mLat = 111320, mLon = 111320 * Math.cos(lat0 * Math.PI / 180);
+  const P = (x, y) => [lat0 + y / mLat, lon0 + x / mLon];
+  let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += rnd(); return s - 3; };
+  const aps = [
+    ['Maple St Cafe', 'WPA2', 6, 40, 70, -32], ['xfinitywifi', 'OPEN', 1, 40, 72, -34], ['NETGEAR47', 'WPA2', 11, 190, 150, -36],
+    ['Library-Guest', 'OPEN', 6, 250, 10, -30], ['TheKimballs', 'WPA3', 1, 120, 165, -38], ['DIRECT-7F-HP OfficeJet', 'WPA2', 6, 130, 150, -44],
+    ['ATT5qR9', 'WPA2', 11, -20, 120, -36], ['Linksys02210', 'WPA2', 1, 270, 120, -37], ['MeshHome', 'WPA2', 6, 60, -10, -35],
+    ['MeshHome', 'WPA2', 6, 160, -12, -35], ['MeshHome', 'WPA2', 6, 110, 40, -35], ['', 'WPA2', 11, 200, 80, -40],
+    ['Spectrum-5G-Not', 'WPA2', 1, -30, 20, -39], ['Brewery Patio', 'OPEN', 11, 230, 165, -33]
+  ];
+  const path = [[0, 0], [250, 0], [250, 160], [0, 160], [0, 0], [120, 0], [120, 160]];
+  const t0 = Date.parse('2026-11-01T15:30:00Z');
+  const pts = []; let t = t0;
+  for (let i = 1; i < path.length; i++) {
+    const [ax, ay] = path[i - 1], [bx, by] = path[i], len = Math.hypot(bx - ax, by - ay);
+    for (let d = 0; d < len; d += 1.4) {
+      const f = d / len, [la, lo] = P(ax + (bx - ax) * f + gauss() * 1.5, ay + (by - ay) * f + gauss() * 1.5);
+      pts.push([t, +la.toFixed(7), +lo.toFixed(7), 6]); t += 1000;
+    }
+  }
+  const macs = aps.map((a, i) => ['3C', '84', '6A', (16 + i).toString(16).toUpperCase(), 'A' + (i % 10), (32 + i * 7).toString(16).toUpperCase().padStart(2, '0')].join(':'));
+  let text = 'HELTECHEATMAP 1\n[nets]\n' + aps.map((a, i) => `${i},${macs[i]},${a[2]},${a[1]},${a[0]}`).join('\n') + '\n[scans]\n#S,1,' + t0 + ',Sample walk\n';
+  for (let ts = t0 + 500; ts < t - 1000; ts += 2200) {
+    const k = Math.floor((ts - t0) / 1000), p = pts[Math.min(k, pts.length - 1)];
+    const x = (p[2] - lon0) * mLon, y = (p[1] - lat0) * mLat, obs = [];
+    aps.forEach((a, i) => {
+      const d = Math.max(3, Math.hypot(x - a[3], y - a[4]));
+      const r = Math.round(a[5] - 30 * Math.log10(d / 3) + gauss() * 3);
+      if (r >= -94) obs.push(i + ':' + r);
+    });
+    text += ts + ';' + obs.join(';') + '\n';
+  }
+  S.tracks = [{ id: 'sample', name: 'Sample walk', pts }];
+  S.logs = [{ id: 'sample', name: 'Sample walk', text }];
+  S.sample = true;
+}
+
+// ---------------- boot ----------------
+const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light';
+setBase(store.get('base', dark ? 'dark' : 'street'));
+S.tracks = store.get('tracks', []);
+S.logs = store.get('logs', []);
+if (!S.tracks.length && !S.logs.length) makeSample();
+render(true);
+setTimeout(() => map.invalidateSize(), 200);
+addEventListener('resize', () => map.invalidateSize());
+})();
+</script>

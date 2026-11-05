@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Heltec Heatmap Flasher</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Saira+Semi+Condensed:wght@700&display=swap">
+<script type="module" src="https://unpkg.com/esp-web-tools@10.0.1/dist/web/install-button.js?module"></script>
+<style>
+:root{--bg:#eaefed;--panel:#fbfcfc;--ink:#13201c;--muted:#56665f;--line:#d2dcd8;--accent:#0a7564;--accent-ink:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1412;--panel:#141e1b;--ink:#e3ebe8;--muted:#8c9e98;--line:#24322e;--accent:#3fcfb2;--accent-ink:#04211b;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;padding:24px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+main{max-width:640px;margin:0 auto;display:grid;gap:14px}
+h1{font:700 28px/1.1 "Saira Semi Condensed","Arial Narrow",sans-serif;margin:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+h2{font:700 15px "Saira Semi Condensed",sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+esp-web-install-button button{font:700 16px system-ui;padding:13px 18px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+ol{margin:0;padding-left:20px;color:var(--muted)}
+li{margin:4px 0}
+a{color:var(--accent)}
+.muted{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Heltec Heatmap Flasher</h1>
+  <p class="muted">Installs the Wi‑Fi survey firmware on a Heltec WiFi LoRa 32 from Chrome or Edge on a computer. Safari and iPhone cannot flash boards.</p>
+
+  <section class="card">
+    <h2>Pick your board</h2>
+    <div class="row">
+      <esp-web-install-button manifest="firmware/manifest-v3.json"><button slot="activate">Flash Heltec V3</button></esp-web-install-button>
+      <esp-web-install-button manifest="firmware/manifest-v4.json"><button slot="activate">Flash Heltec V4</button></esp-web-install-button>
+    </div>
+    <p class="muted">This erases the board, including Meshtastic. You can put Meshtastic back later from flasher.meshtastic.org.</p>
+  </section>
+
+  <section class="card">
+    <h2>Steps</h2>
+    <ol>
+      <li>Plug the Heltec into the computer with a USB‑C data cable.</li>
+      <li>Click your board above and pick the serial port that appears.</li>
+      <li>If it will not connect: hold <b>PRG</b>, tap <b>RST</b>, let go of PRG, and try again.</li>
+      <li>When it finishes, press <b>RST</b>. The screen shows <b>Heltec-Heatmap-XXXX</b>.</li>
+      <li>Then open the <a href="./">Heltec Heatmap app</a> on your iPhone.</li>
+    </ol>
+  </section>
+</main>
+</body>
+</html>
