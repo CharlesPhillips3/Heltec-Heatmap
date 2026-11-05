@@ -1,5 +1,8 @@
 # Heltec Heatmap
 
+**App (open on iPhone):** https://hardwaremack-prog.github.io/Heltec-Heatmap/  
+**Flasher (Chrome/Edge on a computer):** https://hardwaremack-prog.github.io/Heltec-Heatmap/flash.html
+
 Walk or drive around with a Heltec WiFi LoRa 32 **V3 or V4** in your pocket and your iPhone in your hand, then see a color-coded map of every Wi‑Fi network you passed.
 
 - **The Heltec** scans the 2.4 GHz Wi‑Fi band about every 2 seconds and saves every network it hears (name, MAC, channel, security, signal) to its own flash.
@@ -32,7 +35,7 @@ web/                 App source, build script, single-file copy
 
 ## 1. Flash the board
 
-**Easiest: browser flasher.** Once the repo is on GitHub Pages, open `https://<your-user>.github.io/Heltec-Heatmap/flash.html` in Chrome or Edge on a computer, plug in the board, and click **Flash Heltec V3** or **Flash Heltec V4**. This replaces Meshtastic; put it back any time from flasher.meshtastic.org.
+**Easiest: browser flasher.** Open https://hardwaremack-prog.github.io/Heltec-Heatmap/flash.html in Chrome or Edge on a computer, plug in the board, and click **Flash Heltec V3** or **Flash Heltec V4**. This replaces Meshtastic; put it back any time from flasher.meshtastic.org.
 
 **Command line (no Pages needed):**
 ```
@@ -58,14 +61,12 @@ The OLED shows the hotspot name, how many networks it hears, the strongest one, 
 
 Settings at the top of `main.cpp`: hotspot password (`heatmap123`), weakest signal to log (−95 dBm), pause between scans.
 
-## 2. Put the app on GitHub Pages
+## 2. Put the app on your iPhone
 
-iPhone Safari only allows GPS on **https** pages, so the app has to be served from a real web address.
+iPhone Safari only allows GPS on **https** pages, so the app is served by GitHub Pages from the `docs` folder of this repo.
 
-1. Make a repo (for example `Heltec-Heatmap`) and push this folder.
-2. Repo **Settings › Pages**: Source = *Deploy from a branch*, Branch = `main`, folder = `/docs`.
-3. Open `https://<your-user>.github.io/Heltec-Heatmap/` on the iPhone and use **Share › Add to Home Screen**.
-4. First time you tap Record GPS, allow location. If it was denied: Settings › Privacy & Security › Location Services › Safari Websites › While Using.
+1. On the iPhone open https://hardwaremack-prog.github.io/Heltec-Heatmap/ and use **Share › Add to Home Screen**.
+2. The first time you tap Record GPS, allow location. If it was denied: Settings › Privacy & Security › Location Services › Safari Websites › While Using.
 
 ## 3. Do a survey
 
